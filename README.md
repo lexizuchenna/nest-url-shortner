@@ -1,284 +1,144 @@
-# **Robust URL Shortener API with NestJS**
+# URL Shortener API
+
+Hey there! So, this project is a neat little API that lets you take those super long, clunky URLs and shrink them down into something much more manageable. The idea here is to not only make sharing easier but also give you some cool insights into who's clicking your links, where they're coming from, and even what browsers they're using.
 
 ## Overview
 
-This project is a high-performance URL shortening service built with TypeScript and NestJS. It provides a robust API for creating, retrieving, updating, and deleting shortened URLs, utilizing in-memory storage for rapid access and `nanoid` for generating concise, unique identifiers.
+This project lets you create short, trackable links from any long URL. It solves the problem of unwieldy links and provides you with analytics to see how your shared content is performing, all without any fuss. You get a clean, functional API that just works.
 
-## Features
+## Description
 
-- **URL Shortening**: Convert long, cumbersome URLs into short, memorable links.
-- **Efficient Redirection**: Seamlessly redirect users from shortened links to their original destinations.
-- **URL Management**: Comprehensive CRUD operations (Create, Read, Update, Delete) for all shortened URLs.
-- **Input Validation**: Ensures valid URL formats are processed and handles common input errors gracefully.
-- **Unique Identifier Generation**: Leverages `nanoid` for generating secure, URL-friendly unique IDs.
+This API provides a robust and efficient solution for managing and tracking shortened URLs. Built with a focus on performance and developer experience, it offers user authentication, URL shortening, and comprehensive click analytics. Whether you're looking to simplify link sharing or gain valuable insights into your audience engagement, this project offers a solid foundation.
 
-## Getting Started
+## Installation
 
-To get this URL Shortener API up and running on your local machine, follow these simple steps.
+Getting this project up and running on your local machine is pretty straightforward.
 
-### Installation
+1.  **Clone the Repository**
 
-1.  **Clone the Repository**:
+    Start by cloning the project to your local machine:
+
     ```bash
     git clone https://github.com/lexizuchenna/nest-url-shortner.git
     cd nest-url-shortner
     ```
-2.  **Install Dependencies**:
+
+2.  **Install Dependencies**
+
+    Once you're in the project directory, install all the required Node.js packages:
+
     ```bash
+    npm install
+    # or if you prefer pnpm
     pnpm install
     ```
-3.  **Build the Project (Optional, for production)**:
-    ```bash
-    pnpm build
+
+3.  **Set up Environment Variables**
+
+    Create a `.env` file in the root of the project. You'll need to configure your database connection and a JWT secret. Here's an example:
+
+    ```
+    PORT=5000
+    DATABASE_URL="postgresql://user:password@localhost:5432/mydatabase?schema=public"
+    DIRECT_URL="postgresql://user:password@localhost:5432/mydatabase?schema=public"
+    JWT_SECRET="your_very_secret_jwt_key_here"
+    NODE_ENV=development
     ```
 
-### Environment Variables
+    - `PORT`: The port your API will run on.
+    - `DATABASE_URL`: Your PostgreSQL database connection string.
+    - `DIRECT_URL`: Used by Prisma for migrations, typically the same as `DATABASE_URL`.
+    - `JWT_SECRET`: A strong, random string used for signing JWT tokens.
 
-Create a `.env` file in the root of the project and populate it with the following required variables:
+4.  **Run Database Migrations**
 
-```dotenv
-PORT=3000
-```
+    With your database configured, apply the Prisma migrations to set up your database schema:
+
+    ```bash
+    npx prisma migrate dev --name init
+    ```
 
 ## Usage
 
-After installation and setting up environment variables, you can start the API server and interact with it using various HTTP clients like `curl`, Postman, or Insomnia.
+After you've got everything installed and the database is ready, you can fire up the application.
 
-1.  **Start the Development Server**:
+1.  **Start the Development Server**
+
+    To start the API in development mode with hot-reloading:
 
     ```bash
+    npm run start:dev
+    # or if you prefer pnpm
     pnpm start:dev
     ```
 
-    The server will typically run on `http://localhost:3000` (or your specified `PORT`).
+    For a production build:
 
-2.  **Start the Production Server**:
     ```bash
+    npm run start:prod
+    # or if you prefer pnpm
     pnpm start:prod
     ```
 
-### Example Interactions
+2.  **Access the API**
 
-**Shorten a URL:**
+    The API will be running on the port you specified in your `.env` file (e.g., `http://localhost:5000`).
+    - **API Documentation**: You can access the Swagger UI documentation at `http://localhost:5000/api/v1/docs`. This interface lets you explore all available endpoints, their parameters, and expected responses. It's a great way to interact with the API directly.
+    - **Shortened URL Redirect**: When a shortened URL is accessed (e.g., `http://localhost:5000/r/YOUR_SHORT_CODE`), it will automatically redirect to the original URL while recording click analytics.
 
-```bash
-curl -X POST http://localhost:3000 -H "Content-Type: application/json" -d '{"original_url": "https://www.example.com/a-very-long-article-about-software-development"}'
-```
+## Features
 
-**Get All Shortened URLs:**
-
-```bash
-curl -X GET http://localhost:3000
-```
-
-**Redirect a Shortened URL:**
-Open `http://localhost:3000/xyz456fg` (replace `xyz456fg` with an actual shortened ID) in your browser. This will redirect you to the original URL.
-
-**Update a Shortened URL:**
-
-```bash
-curl -X PATCH http://localhost:3000/xyz456fg -H "Content-Type: application/json" -d '{"original_url": "https://www.example.com/an-updated-link"}'
-```
-
-**Delete a Shortened URL:**
-
-```bash
-curl -X DELETE http://localhost:3000/xyz456fg
-```
-
-## API Documentation
-
-This section details the available API endpoints, their expected requests, and potential responses.
-
-### Base URL
-
-`http://localhost:3000` (or your configured `PORT`)
-
-### Endpoints
-
-#### GET /
-
-Retrieves a list of all currently stored shortened URLs.
-
-**Request**:
-No request body required.
-
-**Response**:
-
-```json
-{
-  "success": true,
-  "message": "All url successfully returned",
-  "data": {
-    "urls": [
-      {
-        "id": "abc123de",
-        "original_url": "https://example.com/very/long/url",
-        "created_at": "2023-10-27T10:00:00.000Z",
-        "shortened_url": "http://localhost:3000/abc123de"
-      },
-      {
-        "id": "xyz456fg",
-        "original_url": "https://www.another-example.com/long-page",
-        "created_at": "2023-10-27T10:05:00.000Z",
-        "shortened_url": "http://localhost:3000/xyz456fg"
-      }
-    ]
-  },
-  "statusCode": 200
-}
-```
-
-**Errors**:
-
-- `500 Internal Server Error`: An unexpected server error occurred.
-
-#### POST /
-
-Creates a new shortened URL for a given original URL.
-
-**Request**:
-
-```json
-{
-  "original_url": "https://www.example.com/my-very-long-article-link"
-}
-```
-
-- `original_url` (string, required): The full URL to be shortened.
-
-**Response**:
-
-```json
-{
-  "success": true,
-  "data": {
-    "url": {
-      "id": "xyz456fg",
-      "original_url": "https://www.example.com/my-very-long-article-link",
-      "created_at": "2023-10-27T10:30:00.000Z",
-      "shortened_url": "http://localhost:3000/xyz456fg"
-    }
-  },
-  "message": "URL successfully shortned",
-  "statusCode": 201
-}
-```
-
-**Errors**:
-
-- `400 Bad Request`: `Missing original_url field`
-- `400 Bad Request`: `The url inputed must be in a URL format`
-- `400 Bad Request`: `This url has already been stored` (The server's `ConflictException` is mapped to `HttpStatus.BAD_REQUEST`)
-
-#### GET /:id
-
-Redirects from a shortened URL to its original destination.
-
-**Request**:
-No request body required. The shortened URL's `id` is provided as a path parameter.
-
-**Response**:
-Successful requests result in an HTTP 308 Permanent Redirect to the `original_url`.
-The browser or client will automatically follow this redirect.
-
-**Errors**:
-
-- `404 Not Found`: `No url with id: [id] found`
-
-#### PATCH /:id
-
-Updates the original URL associated with a given shortened ID.
-
-**Request**:
-
-```json
-{
-  "original_url": "https://www.updated-example.com/new-article"
-}
-```
-
-- `id` (string, required): The ID of the shortened URL to update.
-- `original_url` (string, required): The new original URL to associate with the ID.
-
-**Response**:
-
-```json
-{
-  "success": true,
-  "data": {
-    "url": {
-      "id": "xyz456fg",
-      "original_url": "https://www.updated-example.com/new-article",
-      "created_at": "2023-10-27T10:30:00.000Z",
-      "shortened_url": "http://localhost:3000/xyz456fg"
-    }
-  },
-  "message": "The url has been successfully updated",
-  "statusCode": 200
-}
-```
-
-**Errors**:
-
-- `400 Bad Request`: `Missing id param`
-- `400 Bad Request`: `Missing original_url field`
-- `400 Bad Request`: `The url inputed must be in a URL format`
-- `400 Bad Request`: `This url has already been stored` (if the new `original_url` is already linked to a _different_ ID)
-- `404 Not Found`: `The url with id: [id] was not found`
-
-#### DELETE /:id
-
-Deletes a shortened URL entry from the system.
-
-**Request**:
-No request body required. The shortened URL's `id` is provided as a path parameter.
-
-**Response**:
-
-```json
-{
-  "success": true,
-  "data": {
-    "url": {
-      "id": "xyz456fg",
-      "original_url": "https://www.example.com/my-very-long-article-link",
-      "created_at": "2023-10-27T10:30:00.000Z",
-      "shortened_url": "http://localhost:3000/xyz456fg"
-    }
-  },
-  "message": "The url has been successfully deleted",
-  "statusCode": 200
-}
-```
-
-**Errors**:
-
-- `400 Bad Request`: `Missing id param`
-- `404 Not Found`: `The url with id: [id] was not found`
+- **URL Shortening**: Easily transform long URLs into concise, shareable short links.
+- **Custom Short Codes**: While automatic short codes are generated, the underlying service can support custom ones (though not exposed directly in this API).
+- **User Authentication**: Secure user registration and login with JWT-based authentication.
+- **Link Analytics**: Track detailed metrics for each shortened link, including total clicks, click timelines, referrer sources, and browser usage.
+- **CRUD Operations for Links**: Create, retrieve, update, and delete your shortened URLs.
+- **Health Check**: A simple endpoint to check the API's status.
 
 ## Technologies Used
 
-| Technology                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Description                                                                                                   |
-| :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------ |
-| ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                     | A typed superset of JavaScript that compiles to plain JavaScript. Provides enhanced tooling and code quality. |
-| ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                              | A JavaScript runtime built on Chrome's V8 JavaScript engine.                                                  |
-| ![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                 | A progressive Node.js framework for building efficient, reliable, and scalable server-side applications.      |
-| ![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                        | A fast, unopinionated, minimalist web framework for Node.js (used by NestJS).                                 |
-| ![Nanoid](https://img.shields.io/badge/nanoid-3F98F4?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiI+PHBhdGggZmlsbD0iIzNGOThGNCIgZD0iTTAgNWg1djVINzZhMSA1IDAgMCAxIDAtNiA2IDYgMCAwIDEgNiA2aDNWMTAuNDZhMSAxIDAgMCAwIDAtLjloLTEuMjJhNS45NyA1Ljk3IDAgMCAxLTYtNkE1LjkyIDUuOTIgMCAwIDEgNiA0LjU0VjBoNXY1aDhhMSAxIDAgMCAxIDAgMiA2IDYgMCAwIDEgLTYgNkg4LjU0YTUuOTcgNS45NyAwIDAgMS02IDZhMSAxIDAgMCAwIDAgLjloMS4yMnYyLjU0SDMwVjExaC01VjZoLTZaIi8+PC9zdmc+&logoColor=white) | A tiny, secure, URL-friendly, unique string ID generator.                                                     |
-| ![ESLint](https://img.shields.io/badge/ESLint-4B32C3?style=for-the-badge&logo=eslint&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                 | A pluggable linting utility for JavaScript and TypeScript.                                                    |
-| ![Prettier](https://img.shields.io/badge/Prettier-F7BA3E?style=for-the-badge&logo=prettier&logoColor=black)                                                                                                                                                                                                                                                                                                                                                                                                                                           | An opinionated code formatter.                                                                                |
+| Technology     | Description                                                                                   |
+| :------------- | :-------------------------------------------------------------------------------------------- |
+| **NestJS**     | A progressive Node.js framework for building efficient and scalable server-side applications. |
+| **TypeScript** | A typed superset of JavaScript that compiles to plain JavaScript.                             |
+| **Prisma**     | A next-generation ORM that makes database access easy and type-safe.                          |
+| **PostgreSQL** | A powerful, open-source object-relational database system.                                    |
+| **JWT**        | JSON Web Tokens for secure authentication and authorization.                                  |
+| **Bcrypt.js**  | Library for hashing and comparing passwords.                                                  |
+| **Nanoid**     | A tiny, secure, URL-friendly, unique string ID generator.                                     |
+| **Swagger**    | Interactive API documentation for easy exploration and testing.                               |
+
+## Contributing
+
+We'd love for you to contribute to this project! Here's how you can help:
+
+1.  **Fork the repository**.
+2.  **Create a new branch** for your feature or bug fix: `git checkout -b feature/your-feature-name`.
+3.  **Make your changes**.
+4.  **Commit your changes** with a clear and concise message: `git commit -m 'feat: Add new feature X'`.
+5.  **Push your branch** to your forked repository: `git push origin feature/your-feature-name`.
+6.  **Open a Pull Request** to the `main` branch of this repository.
+
+Please ensure your code adheres to the project's coding style and includes appropriate tests.
+
+## License
+
+This project is currently unlicensed.
 
 ## Author Info
 
-- **[Alexander]**
-  - LinkedIn: [Alexander Ukwueze](https://www.linkedin.com/in/lexizuchenna)
-  - X (formerly Twitter): [Lexiz](https://x.com/lexiz_tech_)
+Connect with me!
 
-## Badges
+- **LinkedIn**: [Alexander Ukwueze](https://linkedin.com/in/lexizuchenna)
+- **X (Twitter)**: [@lexiz_tech](https://x.com/lexiz_tech)
 
-![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
-![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)
-![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)
+---
+
+[![NestJS](https://img.shields.io/badge/nestjs-%23e0234e.svg?style=for-the-badge&logo=nestjs&logoColor=white)](https://nestjs.com/)
+[![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Prisma](https://img.shields.io/badge/Prisma-3982CE?style=for-the-badge&logo=Prisma&logoColor=white)](https://www.prisma.io/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens)](https://jwt.io/)
+[![Swagger](https://img.shields.io/badge/Swagger-%2385EA2D.svg?style=for-the-badge&logo=swagger&logoColor=white)](https://swagger.io/)
 
 [![Readme was generated by Dokugen](https://img.shields.io/badge/Readme%20was%20generated%20by-Dokugen-brightgreen)](https://www.npmjs.com/package/dokugen)

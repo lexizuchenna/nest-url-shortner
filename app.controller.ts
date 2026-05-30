@@ -1,57 +1,46 @@
 import {
-  Body,
   Controller,
-  Delete,
   Get,
   HttpCode,
   HttpStatus,
   Param,
-  Patch,
-  Post,
   Redirect,
+  Req,
 } from '@nestjs/common';
 import { AppService } from './app.service';
-import { CreateUrlDto } from 'url/create-url.dto';
+import type { Request } from 'express';
+import { ApiExcludeEndpoint, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
+  @ApiOperation({
+    summary: 'Gets the status of the API',
+    description: 'Returns current health and state of the server',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    example: {
+      message: 'Server is healthy',
+      status: 'ok',
+      timestamp: '2026-05-30T00:16:29.097Z',
+      docs: 'http://localhost:5000/api/v1/docs',
+    },
+  })
   @HttpCode(HttpStatus.OK)
-  getAll(): IRes<{ urls: Array<IUrl> }> {
-    return {
-      success: true,
-      message: 'All url successfully returned',
-      data: { urls: this.appService.getAll() },
-      statusCode: HttpStatus.OK,
-    };
+  async get(@Req() request: Request) {
+    return this.appService.get(request);
   }
 
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  shorten(@Body() { original_url }: CreateUrlDto): IRes<{ url: IUrl }> {
-    return this.appService.shorten(original_url);
-  }
-
-  @Get(':id')
-  @Redirect()
-  redirect(@Param('id') id: string): { url: string; statusCode: number } {
-    return this.appService.redirect(id);
-  }
-
-  @Patch(':id')
-  @HttpCode(HttpStatus.OK)
-  update(
-    @Body() { original_url }: CreateUrlDto,
+  @Get('r/:id')
+  @ApiExcludeEndpoint()
+  @Redirect(undefined, HttpStatus.PERMANENT_REDIRECT)
+  async redirect(
     @Param('id') id: string,
-  ): IRes<{ url: IUrl }> {
-    return this.appService.update(id, original_url);
-  }
-
-  @Delete(':id')
-  @HttpCode(HttpStatus.OK)
-  delete(@Param('id') id: string): IRes<{ url: IUrl }> {
-    return this.appService.delete(id);
+    @Req() request: Request,
+  ): Promise<{ url: string }> {
+    return await this.appService.redirect(id, request);
   }
 }

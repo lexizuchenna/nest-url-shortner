@@ -30,3 +30,12 @@ export class ConflictException extends HttpException {
     );
   }
 }
+
+export class UnAuthorizedException extends HttpException {
+  constructor(message: string) {
+    super(
+      { statusCode: HttpStatus.UNAUTHORIZED, error: 'Not Authorized', message },
+      HttpStatus.NOT_FOUND,
+    );
+  }
+}

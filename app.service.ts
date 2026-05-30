@@ -1,114 +1,51 @@
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { REQUEST } from '@nestjs/core';
-import { customAlphabet } from 'nanoid';
-import { test_url } from 'utils/url';
+import { Injectable } from '@nestjs/common';
+import { NotFoundException } from 'exceptions';
 import type { Request } from 'express';
-import {
-  BadRequestException,
-  ConflictException,
-  NotFoundException,
-} from 'exceptions';
+import { PrismaService } from 'prisma/prisma.service';
 
 @Injectable()
 export class AppService {
-  constructor(@Inject(REQUEST) private readonly req: Request) {}
-  private static readonly urls: Array<IUrl> = [];
+  constructor(private prisma: PrismaService) {}
 
-  getAll(): Array<IUrl> {
-    return AppService.urls;
-  }
-
-  redirect(id: string): { url: string; statusCode: number } {
-    const url = AppService.urls.find((u) => u.id === id);
-
-    if (!url) throw new NotFoundException(`No url with id: ${id} found`);
-
-    return { url: url.original_url, statusCode: HttpStatus.PERMANENT_REDIRECT };
-  }
-
-  shorten(original_url: string) {
-    if (!original_url)
-      throw new BadRequestException('Missing original_url field');
-
-    if (!test_url.test(original_url))
-      throw new BadRequestException('The url inputed must be in a URL format');
-
-    const is_stored = AppService.urls.find(
-      (u) => u.original_url === original_url,
-    );
-
-    if (is_stored)
-      throw new ConflictException('This url has already been stored');
-
-    const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyz', 8);
-
-    const id = nanoid();
-
-    const url = {
-      id,
-      original_url,
-      created_at: new Date().toISOString(),
-      shortened_url: `${this.req.protocol}://${this.req.get('host')}/${id}`,
-    };
-
-    AppService.urls.push(url);
-
+  get(req: Request) {
     return {
-      success: true,
-      data: { url },
-      message: 'URL successfully shortned',
-      statusCode: HttpStatus.CREATED,
+      message: 'Server is healthy',
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      docs: `${req.protocol}://${req.host}/api/v1/docs`,
     };
   }
 
-  update(id: string, original_url: string) {
-    if (!id) throw new BadRequestException('Missing id param');
+  async redirect(id: string, req: Request) {
+    const ipAddress =
+      (req.headers['x-forwarded-for'] as string) ||
+      req.socket.remoteAddress ||
+      'unknown';
+    const userAgent = req.headers['user-agent'] || 'unknown';
+    const referrer = req.headers['referer'] || 'direct';
 
-    if (!original_url)
-      throw new BadRequestException('Missing original_url field');
+    const result = await this.prisma.$transaction(async (tx) => {
+      const link = await tx.links.findUnique({
+        where: { short_code: id },
+      });
 
-    if (!test_url.test(original_url))
-      throw new BadRequestException('The url inputed must be in a URL format');
+      if (!link) {
+        throw new NotFoundException(`No url with id: ${id} found`);
+      }
 
-    const index = AppService.urls.findIndex((u) => u.id === id);
+      await tx.clicks.create({
+        data: {
+          link_id: link.id,
+          user_id: link.user_id,
+          ip_address: ipAddress,
+          user_agent: userAgent,
+          referrer: referrer,
+        },
+      });
 
-    const is_stored = AppService.urls.find(
-      (u) => u.original_url === original_url && u.id !== id,
-    );
+      return link;
+    });
 
-    if (is_stored)
-      throw new BadRequestException('This url has already been stored');
-
-    if (index === -1)
-      throw new NotFoundException(`The url with id: ${id} was not found`);
-
-    AppService.urls[index].original_url = original_url;
-
-    return {
-      success: true,
-      data: { url: AppService.urls[index] },
-      message: 'The url has been successfully updated',
-      statusCode: HttpStatus.OK,
-    };
-  }
-
-  delete(id: string) {
-    if (!id) throw new BadRequestException('Missing id param');
-
-    const index = AppService.urls.findIndex((u) => u.id === id);
-
-    if (index === -1)
-      throw new NotFoundException(`The url with id: ${id} was not found`);
-
-    const url = AppService.urls[index];
-
-    AppService.urls.splice(index, 1);
-
-    return {
-      success: true,
-      data: { url },
-      message: 'The url has been successfully deleted',
-      statusCode: HttpStatus.OK,
-    };
+    return { url: result.original_url };
   }
 }

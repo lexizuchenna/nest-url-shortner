@@ -112,8 +112,7 @@ export class UserService {
   }
 
   getProfile(req: Request) {
-    return new ApiResponse('User retrieved successfully', {
-      user: req.user as users,
-    });
+    const { password, ...user } = req.user as users;
+    return new ApiResponse('User retrieved successfully', { user });
   }
 }

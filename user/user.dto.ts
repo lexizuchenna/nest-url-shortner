@@ -17,7 +17,7 @@ class User {
   })
   email: string;
 
-  @ApiProperty({ type: Date, description: 'The creation dated ' })
+  @ApiProperty({ type: Date, description: 'The creation date ' })
   created_at: Date;
 }
 
@@ -44,6 +44,7 @@ class LoginUserData {
 }
 
 class GetUserData {
+  @ApiProperty({ description: 'The users details' })
   user: User;
 }
 

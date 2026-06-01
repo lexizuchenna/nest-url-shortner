@@ -6,7 +6,7 @@ import { AppModule } from './app.module';
 import { env } from 'env';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { cors: true });
 
   app.setGlobalPrefix('api/v1', {
     exclude: [{ method: RequestMethod.GET, path: '/r/:id' }],
